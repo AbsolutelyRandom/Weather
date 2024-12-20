@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log IP to GitHub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: #fff;
+            text-align: center;
+            padding: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #444;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Log IP Address to GitHub</h1>
+    <p>Click the button below to log your IP address to a GitHub repository.</p>
+    <button id="logIpButton">Log My IP</button>
+
+    <script>
+        const GITHUB_TOKEN = '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'; // Replace with your token
+        const REPO_OWNER = 'AbsolutelyRandom'; // Replace with your GitHub username/organization
+        const REPO_NAME = 'InfoGrabAbsolutelyRandom61357128396873128'; // Replace with your repository name
+        const FILE_PATH = 'ip_logs.txt';
+
+        async function logIpToGitHub() {
+            try {
+                // Fetch user's IP address
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                const ipAddress = ipData.ip;
+
+                // Get the current date and time
+                const timestamp = new Date().toISOString();
+                const logEntry = `${timestamp} - IP: ${ipAddress}\n`;
+
+                // Fetch the existing file content
+                const fileResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                let fileData = await fileResponse.json();
+                let sha = fileData.sha;
+                let content = atob(fileData.content);
+
+                // Append new log entry
+                content += logEntry;
+
+                // Update the file on GitHub
+                const updateResponse = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: 'Log IP Address',
+                        content: btoa(content),
+                        sha: sha
+                    })
+                });
+
+                if (updateResponse.ok) {
+                    alert('IP Address logged successfully!');
+                } else {
+                    throw new Error('Failed to update the file on GitHub.');
+                }
+            } catch (error) {
+                console.error('Error logging IP address:', error);
+                alert('An error occurred. Check the console for details.');
+            }
+        }
+
+        document.getElementById('logIpButton').addEventListener('click', logIpToGitHub);
+    </script>
+</body>
+</html>
